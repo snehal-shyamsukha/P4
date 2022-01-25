@@ -1,0 +1,19 @@
+TIME SENSITIVE NETWORKING 
+What is TSN?
+In these evolving times of technology, deterministic communication is critical now more than ever.
+TSN defines mechanisms for time-sensitive transmission of data over deterministic Ethernet networks that enables true real-time communication.
+
+Why do we need it? 
+TSN offers bounded latency, zero congestion loss, traffic scheduling and time synchronization. In addition to this packets belonging to a TSN flow can be sequenced and delivered simultaneously along multiple paths with the duplicates deleted at or near the destination.
+
+Key Features of TSN:
+1. Time synchronization- All network devices can synchronize their internal clocks to an accuracy between 1 x 10^-6 sec and 10 ns. (Synchronization is achieved with Precision Time Protocol).
+2. Contracts between the transmitters and the network- which enables TSN to provide bounded latency, zero congestion loss, and ultra reliable packet delivery.
+3. Time Aware Shaper- Designed to seperate communication into fixed lengths and repeating time cycles. By doing this its possible to grant exclusive access to ethernet transmission for traffic classes requiring transmission guarantees that cannot be interrupted.
+
+TSN Projects and Applications:
+The key market players for TSN are:  Cisco Systems,  Intel Corporation , Belden, Marvell Technology Group Ltd etc. TSN is constantly being researched so it can be applied on a larger scale for providing deterministic real time communication over ethernet. 
+
+Linking a few research papers where TSN has been applied on hardware, instead of just simulations.
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9657100
+https://www.researchgate.net/publication/336056996_A_Simulation_Model_for_Time-sensitive_Networking_TSN_with_Experimental_Validation
