@@ -4,7 +4,8 @@ Network systems are currently built on the bottom up approach, which is
 the fixed function ASIC,and their datasheet roughly tell us " this is HOW I KNOW to process packets" and that defines bottoms up how your system will be built.
 If you want to add new features, or support additional protocols you would have to change the fixed function chip which would take multiple years. 
 Data plane programming with P4 is trying to turn the philosophy upside down.
-What we really want is to be able to define at a high level exactly how the chip should process packets "This is HOW I WANT packets to be processed", which is done by writing a P4 program
+What we really want is to be able to define at a high level exactly how the chip should process packets "This is HOW I WANT packets to be processed", 
+which is done by writing a P4 program
 That P4 program is then compiled down to the chip
 This way network system designers get to define exactly what features they want to have in their system, without having to rely on third party chip vendors to make the decisions for them.
 
