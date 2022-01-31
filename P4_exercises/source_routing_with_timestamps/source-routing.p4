@@ -14,6 +14,8 @@ const bit<16> TYPE_SRCROUTING = 0x1234;
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
+typedef bit<32> switchID_t;
+typedef bit<48> timestamp_t;
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -40,15 +42,23 @@ header ipv4_t {
     ip4Addr_t srcAddr;
     ip4Addr_t dstAddr;
 }
-
+header switch_t{
+    switchID_t swid;
+    timestamp_t timestamp;
+}
+struct parser_metadata_t{
+    bit<16> remaining;
+}
 struct metadata {
     /* empty */
+    parser_metadata_t parser_metadata;
 }
 
 struct headers {
     ethernet_t              ethernet;
     srcRoute_t[MAX_HOPS]    srcRoutes;
     ipv4_t                  ipv4;
+    switch_t[MAX_HOPS]      swtraces;
 }
 
 /*************************************************************************
@@ -82,7 +92,19 @@ parser MyParser(packet_in packet,
 
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
-        transition accept;
+        transition select(meta.parser_metadata.remaining){
+            0: accept;
+            default: parse_swtrace;
+        }
+    }
+    state parse_swtrace {
+        packet.extract(hdr.swtraces.next);
+        meta.parser_metadata.remaining = meta.parser_metadata.remaining -1;
+        transition select(meta.parser_metadata.remaining)
+         { 0:accept;
+           default: parse_swtrace;
+         }
+        
     }
 
 }
@@ -104,9 +126,7 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
-    action ingress_timestamp(){
-        standard_metadata.ingress_global_timestamp;
-    }
+   
     action drop() {
         mark_to_drop(standard_metadata);
     }
@@ -148,11 +168,24 @@ control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
 
-    action egress_timestamp(){
-        standard_metadata.egress_global_timestamp;
-    }         
-    apply { 
-        egress_timestamp();
+    action add_swtrace(switchID_t swid)
+    { 
+        hdr.swtraces.push_front(1);
+        hdr.swtraces[0].swid=swid;
+        hdr.swtraces[0].timestamp= (timestamp_t)standard_metadata.egress_global_timestamp;
+    
+    }
+    table swtrace {
+        actions = {
+            add_swtrace;
+            NoAction;
+        }
+        default_action= NoAction();
+    }
+    apply {
+        if(hdr.ipv4.isValid()){
+                swtrace.apply();
+        }
     }
 }
 
@@ -173,6 +206,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.srcRoutes);
         packet.emit(hdr.ipv4);
+        packet.emit(hdr.swtraces);
     }
 }
 
