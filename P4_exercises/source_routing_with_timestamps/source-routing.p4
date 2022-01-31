@@ -42,10 +42,20 @@ header ipv4_t {
     ip4Addr_t srcAddr;
     ip4Addr_t dstAddr;
 }
+
+header ipv4_option_t {
+    bit<1> copyFlag;
+    bit<2> optClass;
+    bit<5> option;
+    bit<8> optionLength;
+}
+
+
 header switch_t{
     switchID_t swid;
     timestamp_t timestamp;
 }
+
 struct parser_metadata_t{
     bit<16> remaining;
 }
@@ -146,7 +156,6 @@ control MyIngress(inout headers hdr,
     
     apply {
         if (hdr.srcRoutes[0].isValid()){
-            ingress_timestamp();
             if (hdr.srcRoutes[0].bos == 1){
                 srcRoute_finish();
             }
@@ -171,6 +180,7 @@ control MyEgress(inout headers hdr,
     action add_swtrace(switchID_t swid)
     { 
         hdr.swtraces.push_front(1);
+        hdr.swtraces[0].setValid();
         hdr.swtraces[0].swid=swid;
         hdr.swtraces[0].timestamp= (timestamp_t)standard_metadata.egress_global_timestamp;
     
