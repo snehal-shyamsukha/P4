@@ -112,7 +112,7 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
     action ingress_global_timestamp(){
-        ingress_timestamp=standard_metadata.ingress_global_timestamp;
+        hdr.srcRoute[0].ingress_timestamp=standard_metadata.ingress_global_timestamp;
     }
     
     action srcRoute_nhop() {
@@ -153,7 +153,7 @@ control MyEgress(inout headers hdr,
                  inout standard_metadata_t standard_metadata) {
    
    action egress_global_timestamp(){
-       egress_timestamp= standard_metadata.egress_global_timestamp;
+       hdr.srcRoutes.last.egress_timestamp= standard_metadata.egress_global_timestamp;
    }
        apply { 
         if(hdr.srcRoutes.last.isValid()){

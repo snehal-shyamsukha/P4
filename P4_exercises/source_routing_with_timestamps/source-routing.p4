@@ -26,7 +26,7 @@ header ethernet_t {
 header srcRoute_t {
     bit<1>    bos;
     bit<15>   port;
-}
+  }
 
 header ipv4_t {
     bit<4>    version;
@@ -42,26 +42,17 @@ header ipv4_t {
     ip4Addr_t srcAddr;
     ip4Addr_t dstAddr;
 }
-
-header ipv4_option_t {
+header ipv4_option_t{
     bit<1> copyFlag;
     bit<2> optClass;
     bit<5> option;
     bit<8> optionLength;
+    
 }
-
 
 header switch_t{
     switchID_t swid;
-    timestamp_t timestamp;
-}
-
-struct parser_metadata_t{
-    bit<16> remaining;
-}
-struct metadata {
-    /* empty */
-    parser_metadata_t parser_metadata;
+    timestamp_t egress_timestamp; 
 }
 
 struct headers {
@@ -88,6 +79,7 @@ parser MyParser(packet_in packet,
         packet.extract(hdr.ethernet);
         transition select(hdr.ethernet.etherType) {
             TYPE_SRCROUTING: parse_srcRouting;
+            TYPE_IPV4: parse_ipv4;
             default: accept;
         }
     }
@@ -95,26 +87,15 @@ parser MyParser(packet_in packet,
     state parse_srcRouting {
         packet.extract(hdr.srcRoutes.next);
         transition select(hdr.srcRoutes.last.bos) {
-            1: parse_ipv4;
+             1: parse_swtrace;
             default: parse_srcRouting;
         }
     }
 
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
-        transition select(meta.parser_metadata.remaining){
-            0: accept;
-            default: parse_swtrace;
+        transition accept;
         }
-    }
-    state parse_swtrace {
-        packet.extract(hdr.swtraces.next);
-        meta.parser_metadata.remaining = meta.parser_metadata.remaining -1;
-        transition select(meta.parser_metadata.remaining)
-         { 0:accept;
-           default: parse_swtrace;
-         }
-        
     }
 
 }
@@ -140,7 +121,6 @@ control MyIngress(inout headers hdr,
     action drop() {
         mark_to_drop(standard_metadata);
     }
-    
     action srcRoute_nhop() {
         standard_metadata.egress_spec = (bit<9>)hdr.srcRoutes[0].port;
         hdr.srcRoutes.pop_front(1);
@@ -182,7 +162,7 @@ control MyEgress(inout headers hdr,
         hdr.swtraces.push_front(1);
         hdr.swtraces[0].setValid();
         hdr.swtraces[0].swid=swid;
-        hdr.swtraces[0].timestamp= (timestamp_t)standard_metadata.egress_global_timestamp;
+        hdr.swtraces[0].egress_timestamp= standard_metadata.egress_global_timestamp;
     
     }
     table swtrace {
@@ -193,7 +173,7 @@ control MyEgress(inout headers hdr,
         default_action= NoAction();
     }
     apply {
-        if(hdr.ipv4.isValid()){
+        if(hdr.srcRoutes[0].isValid()){
                 swtrace.apply();
         }
     }
