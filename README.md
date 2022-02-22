@@ -1,2 +1,2 @@
-# TSN-P4
-Documenting everything I've learnt about data plane programming with P4 and Time Sensitive Networks
+#P4
+Data plane programming with P4 and exercises related to it.
